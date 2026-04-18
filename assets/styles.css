@@ -170,6 +170,7 @@ h1 {
   max-width: none;
   transform-origin: 0 0;
   user-select: none;
+  will-change: transform;
 }
 
 .edge {

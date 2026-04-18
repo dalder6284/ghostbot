@@ -1,6 +1,6 @@
 "use strict";
 
-const ASSET_VERSION = "20260418-graph-2";
+const ASSET_VERSION = "20260418-graph-3";
 
 const GRAPH_CONFIG = {
   first: {
@@ -420,8 +420,9 @@ function applyZoom() {
   const scaledHeight = Math.max(1, zoom.baseHeight * zoom.scale);
   zoom.canvas.style.width = `${scaledWidth}px`;
   zoom.canvas.style.height = `${scaledHeight}px`;
-  zoom.svg.setAttribute("width", String(scaledWidth));
-  zoom.svg.setAttribute("height", String(scaledHeight));
+  zoom.svg.setAttribute("width", String(zoom.baseWidth));
+  zoom.svg.setAttribute("height", String(zoom.baseHeight));
+  zoom.svg.style.transform = `scale(${zoom.scale})`;
 }
 
 function clampZoom(scale) {
@@ -531,20 +532,26 @@ function handlePointerMove(event) {
     const [a, b] = Array.from(state.pointers.values());
     const distance = pointerDistance(a, b);
     const center = pointerCenter(a, b);
+    const rect = scroll.getBoundingClientRect();
+    const viewportX = center.x - rect.left;
+    const viewportY = center.y - rect.top;
     if (!state.gesture || state.gesture.type !== "pinch") {
       state.gesture = {
         type: "pinch",
         distance,
         scale: state.zoom.scale,
+        graphX: (scroll.scrollLeft + viewportX) / state.zoom.scale,
+        graphY: (scroll.scrollTop + viewportY) / state.zoom.scale,
       };
       return;
     }
-    const rect = scroll.getBoundingClientRect();
-    setZoom(
+    const nextScale = clampZoom(
       state.gesture.scale * (distance / state.gesture.distance),
-      center.x - rect.left,
-      center.y - rect.top,
     );
+    state.zoom.scale = nextScale;
+    applyZoom();
+    scroll.scrollLeft = state.gesture.graphX * nextScale - viewportX;
+    scroll.scrollTop = state.gesture.graphY * nextScale - viewportY;
   }
 }
 
