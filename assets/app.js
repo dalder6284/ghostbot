@@ -1,6 +1,6 @@
 "use strict";
 
-const ASSET_VERSION = "20260418-graph-5";
+const ASSET_VERSION = "20260418-graph-6";
 
 const GRAPH_CONFIG = {
   first: {
@@ -605,8 +605,33 @@ function bindTabs() {
   }
 }
 
+function bindInfoToggle() {
+  const button = document.getElementById("info-toggle");
+  const panel = document.getElementById("info-panel");
+  if (!button || !panel) {
+    return;
+  }
+
+  function setOpen(isOpen) {
+    button.setAttribute("aria-expanded", String(isOpen));
+    panel.hidden = !isOpen;
+  }
+
+  button.addEventListener("click", () => {
+    setOpen(button.getAttribute("aria-expanded") !== "true");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) {
+      setOpen(false);
+      button.focus();
+    }
+  });
+}
+
 async function init() {
   bindTabs();
+  bindInfoToggle();
   bindGraphInteractions();
   window.addEventListener("resize", handleResize);
   if (window.location.hash === "#second-player") {

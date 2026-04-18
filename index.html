@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ghost Strategy Graphs</title>
-  <link rel="stylesheet" href="assets/styles.css?v=20260418-graph-5">
-  <script src="assets/app.js?v=20260418-graph-5" defer></script>
+  <link rel="stylesheet" href="assets/styles.css?v=20260418-graph-6">
+  <script src="assets/app.js?v=20260418-graph-6" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -29,15 +29,34 @@
         </div>
       </section>
     </div>
-    <nav class="tabs" aria-label="Strategy graph tabs" role="tablist">
-      <button class="tab is-active" type="button" id="tab-first" role="tab" aria-controls="graph-panel" aria-selected="true" data-graph-key="first">
-        First Player
+    <div class="header-controls">
+      <nav class="tabs" aria-label="Strategy graph tabs" role="tablist">
+        <button class="tab is-active" type="button" id="tab-first" role="tab" aria-controls="graph-panel" aria-selected="true" data-graph-key="first">
+          First Player
+        </button>
+        <button class="tab" type="button" id="tab-second" role="tab" aria-controls="graph-panel" aria-selected="false" data-graph-key="second">
+          Second Player
+        </button>
+      </nav>
+      <button class="info-toggle" type="button" id="info-toggle" aria-expanded="false" aria-controls="info-panel">
+        Rules
       </button>
-      <button class="tab" type="button" id="tab-second" role="tab" aria-controls="graph-panel" aria-selected="false" data-graph-key="second">
-        Second Player
-      </button>
-    </nav>
+    </div>
   </header>
+  
+  <section class="info-panel" id="info-panel" aria-labelledby="info-panel-title" hidden>
+    <p>I forgot what the game is actually called and I'm too lazy right now to ask my friend as I write this explanation, so I'll just be calling it <em>Ghost</em> here.</p>
+
+    <h2 id="info-panel-title">What the graphs show</h2>
+    <p>For the game <em>Ghost</em>, given a list of valid English words, it doesn't take too long for a computer to find out if you can force a win if you play perfectly. In fact, you probably don't even need to have a list of English words. But, I'm sure we can prove that some other time. </p>
+    <p>These graphs show different paths a <em>Ghost</em> game can take. Not every path, obviously. They only show the paths that matter if somebody is playing with a perfect strategy. </p>
+    
+    <p><b>There are only four letters that the first player can choose to force a win in <em>Ghost</em>. Otherwise, the second player can force a win.</b></p>
+    
+    <h2>How to play <em>Ghost</em></h2>
+    <p>Ghost is a two-player word game where players take turns adding one letter to the end of a growing fragment, trying not to be the player who completes a valid word of four or more letters; for example, if the fragment is <em>TRE</em>, playing <em>E</em> makes <em>TREE</em>, so that player loses. Each fragment must also be extendable into some valid dictionary word, so if one player makes a fragment like <em>GHX</em> and no word starts that way, the other player can challenge and win. Short words under four letters do not count as losing completed words, so making <em>AN</em> or <em>BAR</em> is safe as long as the fragment can still be extended. A sample round might go <em>T</em>, <em>R</em>, <em>E</em>; now the next player should avoid <em>E</em> because tree loses, and might play another letter only if the dictionary has a longer word beginning with that new fragment (perhaps they'd like to play <em><a href="https://en.wikipedia.org/wiki/Trews">TREWS</a></em>).</p>
+    <p>I don't remember if this game was called <em>Ghost</em> or <em>Ghost of Three Thirds</em> or something else like that, but when I was in Taiwan, I spent a lot of time playing it with a friend. We actually got into a really big argument about whether 'drear' was a word (after I played <em>R</em> to the current <em>DREA</em>). Allie, if you're reading this, <em>Ghost</em> Bot says you were right. Who knew?!</p>
+  </section>
 
   <section class="graph-meta" id="graph-meta" aria-live="polite">
     Loading graph data...

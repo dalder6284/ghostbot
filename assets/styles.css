@@ -56,6 +56,13 @@ button {
   min-width: 0;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 h1 {
   margin: 0;
   font-size: 22px;
@@ -98,6 +105,73 @@ h1 {
 .tab.is-active {
   color: #ffffff;
   background: var(--focus);
+}
+
+.info-toggle {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.info-toggle:hover {
+  background: #edf3ef;
+}
+
+.info-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--focus), transparent 65%);
+  outline-offset: 2px;
+}
+
+.info-toggle[aria-expanded="true"] {
+  color: #ffffff;
+  border-color: var(--focus);
+  background: var(--focus);
+}
+
+.info-panel {
+  position: fixed;
+  top: 86px;
+  right: 22px;
+  z-index: 20;
+  width: min(560px, calc(100vw - 24px));
+  max-height: min(72vh, 620px);
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(23, 34, 27, 0.18);
+}
+
+.info-panel[hidden] {
+  display: none;
+}
+
+.info-panel h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.info-panel h2 + p {
+  margin-top: 0;
+}
+
+.info-panel p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.info-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.info-panel a {
+  color: var(--focus);
 }
 
 .graph-meta {
@@ -265,6 +339,10 @@ h1 {
     gap: 7px;
   }
 
+  .header-controls {
+    width: 100%;
+  }
+
   h1 {
     font-size: 18px;
   }
@@ -292,16 +370,30 @@ h1 {
     height: 9px;
     border-width: 1.5px;
   }
+
+  .info-panel {
+    top: 134px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 148px);
+    padding: 14px 15px;
+  }
 }
 
 @media (max-width: 520px) {
   .tabs {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 
   .tab {
     flex: 1;
     min-width: 0;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+
+  .info-toggle {
     padding: 5px 8px;
     font-size: 13px;
   }
@@ -312,5 +404,10 @@ h1 {
 
   .legend-row {
     white-space: normal;
+  }
+
+  .info-panel {
+    top: 120px;
+    max-height: calc(100vh - 134px);
   }
 }
