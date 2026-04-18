@@ -1,6 +1,6 @@
 "use strict";
 
-const ASSET_VERSION = "20260418-graph-3";
+const ASSET_VERSION = "20260418-graph-5";
 
 const GRAPH_CONFIG = {
   first: {
@@ -312,8 +312,6 @@ function buildNode(node) {
   const group = createSvgElement("g", {
     class: nodeClasses(node),
     "data-node-id": node.id,
-    role: "button",
-    tabindex: "0",
   });
   appendSvgTitle(
     group,
@@ -337,22 +335,7 @@ function buildNode(node) {
   text.textContent = displayLabel(node.label);
   group.appendChild(text);
 
-  group.addEventListener("click", () => selectNode(group, node));
-  group.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      selectNode(group, node);
-    }
-  });
-
   return group;
-}
-
-function selectNode(element, node) {
-  document
-    .querySelectorAll(".node.selected")
-    .forEach((selected) => selected.classList.remove("selected"));
-  element.classList.add("selected");
 }
 
 function updateMeta(graph) {
@@ -395,7 +378,7 @@ function setupZoom(layout, canvas, svg) {
   state.zoom.svg = svg;
   state.zoom.max = 2.5;
   state.zoom.min = fitScaleForCurrentView(layout);
-  state.zoom.scale = Math.max(state.zoom.min, Math.min(1, state.zoom.max));
+  state.zoom.scale = state.zoom.min;
   applyZoom();
 
   const scroll = document.getElementById("graph-scroll");
