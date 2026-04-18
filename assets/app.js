@@ -1,5 +1,7 @@
 "use strict";
 
+const ASSET_VERSION = "20260418-graph-2";
+
 const GRAPH_CONFIG = {
   first: {
     path: "data/first_player_strategy.json",
@@ -210,8 +212,15 @@ function appendSvgTitle(parent, text) {
 function renderGraph(key) {
   const graph = state.graphs[key];
   const scroll = document.getElementById("graph-scroll");
+  if (!scroll) {
+    throw new Error("Graph container is missing from index.html");
+  }
+  const graphPanel = document.getElementById("graph-panel");
+  if (!graphPanel) {
+    throw new Error("Graph panel is missing from index.html");
+  }
   const tabId = GRAPH_CONFIG[key].tabId;
-  document.getElementById("graph-panel").setAttribute("aria-labelledby", tabId);
+  graphPanel.setAttribute("aria-labelledby", tabId);
 
   scroll.replaceChildren();
   updateTabs(key);
@@ -457,6 +466,9 @@ function zoomBy(factor, clientX = null, clientY = null) {
 
 function bindGraphInteractions() {
   const scroll = document.getElementById("graph-scroll");
+  if (!scroll) {
+    return;
+  }
   scroll.addEventListener(
     "wheel",
     (event) => {
@@ -585,7 +597,7 @@ function setActiveGraph(key) {
 async function loadGraphs() {
   const entries = await Promise.all(
     Object.entries(GRAPH_CONFIG).map(async ([key, config]) => {
-      const response = await fetch(config.path);
+      const response = await fetch(`${config.path}?v=${ASSET_VERSION}`);
       if (!response.ok) {
         throw new Error(`Could not load ${config.path}`);
       }
@@ -617,10 +629,16 @@ async function init() {
   } catch (error) {
     const meta = document.getElementById("graph-meta");
     const scroll = document.getElementById("graph-scroll");
-    meta.textContent = "Unable to load graph data.";
+    if (meta) {
+      meta.textContent = "Unable to load graph data.";
+    }
     const message = createElement("p", { class: "status-message" });
     message.textContent = `${error.message}. Serve this folder through GitHub Pages or another local web server.`;
-    scroll.replaceChildren(message);
+    if (scroll) {
+      scroll.replaceChildren(message);
+    } else {
+      document.body.appendChild(message);
+    }
   }
 }
 
