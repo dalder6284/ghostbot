@@ -9,9 +9,25 @@
 </head>
 <body>
   <header class="site-header">
-    <div>
-      <h1>Ghost Strategy Graphs</h1>
-      <p>Perfect-play proof DAGs for the solved opening branches.</p>
+    <div class="header-main">
+      <div>
+        <h1>Ghost Strategy Graphs</h1>
+        <p>Perfect-play proof DAGs for the solved opening branches.</p>
+      </div>
+      <section class="legend" aria-label="Legend">
+        <div class="legend-row">
+          <span class="sample sample-bot"></span>
+          <span>Winning reply</span>
+        </div>
+        <div class="legend-row">
+          <span class="sample sample-opponent"></span>
+          <span>Covered choice</span>
+        </div>
+        <div class="legend-row">
+          <span class="sample sample-terminal"></span>
+          <span>End word</span>
+        </div>
+      </section>
     </div>
     <nav class="tabs" aria-label="Strategy graph tabs" role="tablist">
       <button class="tab is-active" type="button" id="tab-first" role="tab" aria-controls="graph-panel" aria-selected="true" data-graph-key="first">
@@ -31,28 +47,6 @@
     <main class="graph-stage" id="graph-panel" role="tabpanel" aria-labelledby="tab-first">
       <div class="graph-scroll" id="graph-scroll"></div>
     </main>
-
-    <aside class="inspector" aria-label="Graph details">
-      <section class="legend" aria-label="Legend">
-        <div class="legend-row">
-          <span class="sample sample-bot"></span>
-          <span>Bot turn or strategy reply</span>
-        </div>
-        <div class="legend-row">
-          <span class="sample sample-opponent"></span>
-          <span>Opponent turn or covered option</span>
-        </div>
-        <div class="legend-row">
-          <span class="sample sample-terminal"></span>
-          <span>Terminal completed word</span>
-        </div>
-      </section>
-
-      <section class="details" id="details">
-        <h2>Select a Fragment</h2>
-        <p>Click a node to inspect its turn, proof status, valid continuations, and invalid letters.</p>
-      </section>
-    </aside>
   </div>
 </body>
 </html>

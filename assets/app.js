@@ -29,6 +29,17 @@ const LAYOUT = {
 const state = {
   activeKey: "first",
   graphs: {},
+  zoom: {
+    scale: 1,
+    min: 0.2,
+    max: 2.5,
+    baseWidth: 0,
+    baseHeight: 0,
+    canvas: null,
+    svg: null,
+  },
+  pointers: new Map(),
+  gesture: null,
 };
 
 function createElement(name, attrs = {}) {
@@ -203,7 +214,6 @@ function renderGraph(key) {
   document.getElementById("graph-panel").setAttribute("aria-labelledby", tabId);
 
   scroll.replaceChildren();
-  resetDetails();
   updateTabs(key);
 
   if (!graph) {
@@ -216,7 +226,10 @@ function renderGraph(key) {
   const layout = computeLayout(graph);
   updateMeta(graph);
   const svg = buildSvg(graph, layout);
-  scroll.appendChild(svg);
+  const canvas = createElement("div", { class: "graph-canvas" });
+  canvas.appendChild(svg);
+  scroll.appendChild(canvas);
+  setupZoom(layout, canvas, svg);
 }
 
 function buildSvg(graph, layout) {
@@ -331,7 +344,6 @@ function selectNode(element, node) {
     .querySelectorAll(".node.selected")
     .forEach((selected) => selected.classList.remove("selected"));
   element.classList.add("selected");
-  updateDetails(node);
 }
 
 function updateMeta(graph) {
@@ -358,54 +370,203 @@ function metaItem(text) {
   return item;
 }
 
-function resetDetails() {
-  const details = document.getElementById("details");
-  details.replaceChildren();
-  const heading = createElement("h2");
-  heading.textContent = "Select a Fragment";
-  const text = createElement("p");
-  text.textContent =
-    "Click a node to inspect its turn, proof status, valid continuations, and invalid letters.";
-  details.append(heading, text);
-}
-
-function updateDetails(node) {
-  const details = document.getElementById("details");
-  const heading = createElement("h2");
-  heading.textContent = node.label;
-  const list = createElement("dl");
-  const values = [
-    ["Status", node.status],
-    ["Turn", node.turn || "terminal"],
-    ["Depth", node.depth],
-    ["Plies", node.plies_to_end ?? "terminal"],
-    ["Valid", formatLetters(node.valid_letters)],
-    ["Invalid", formatLetters(node.invalid_letters)],
-  ];
-
-  details.replaceChildren(heading, list);
-  for (const [label, value] of values) {
-    const term = createElement("dt");
-    const description = createElement("dd");
-    term.textContent = label;
-    description.textContent = String(value);
-    list.append(term, description);
-  }
-}
-
-function formatLetters(letters) {
-  if (!letters || letters.length === 0) {
-    return "none";
-  }
-  return letters.join(", ");
-}
-
 function updateTabs(activeKey) {
   for (const [key, config] of Object.entries(GRAPH_CONFIG)) {
     const tab = document.getElementById(config.tabId);
     const isActive = key === activeKey;
     tab.classList.toggle("is-active", isActive);
     tab.setAttribute("aria-selected", String(isActive));
+  }
+}
+
+function setupZoom(layout, canvas, svg) {
+  state.zoom.baseWidth = layout.width;
+  state.zoom.baseHeight = layout.height;
+  state.zoom.canvas = canvas;
+  state.zoom.svg = svg;
+  state.zoom.max = 2.5;
+  state.zoom.min = fitScaleForCurrentView(layout);
+  state.zoom.scale = Math.max(state.zoom.min, Math.min(1, state.zoom.max));
+  applyZoom();
+
+  const scroll = document.getElementById("graph-scroll");
+  scroll.scrollLeft = 0;
+  scroll.scrollTop = 0;
+}
+
+function fitScaleForCurrentView(layout) {
+  const scroll = document.getElementById("graph-scroll");
+  const visibleWidth = Math.max(1, scroll.clientWidth - 28);
+  const visibleHeight = Math.max(1, scroll.clientHeight - 28);
+  return Math.min(1, visibleWidth / layout.width, visibleHeight / layout.height);
+}
+
+function applyZoom() {
+  const zoom = state.zoom;
+  if (!zoom.canvas || !zoom.svg) {
+    return;
+  }
+
+  const scaledWidth = Math.max(1, zoom.baseWidth * zoom.scale);
+  const scaledHeight = Math.max(1, zoom.baseHeight * zoom.scale);
+  zoom.canvas.style.width = `${scaledWidth}px`;
+  zoom.canvas.style.height = `${scaledHeight}px`;
+  zoom.svg.setAttribute("width", String(scaledWidth));
+  zoom.svg.setAttribute("height", String(scaledHeight));
+}
+
+function clampZoom(scale) {
+  return Math.max(state.zoom.min, Math.min(state.zoom.max, scale));
+}
+
+function setZoom(nextScale, viewportX = null, viewportY = null) {
+  const scroll = document.getElementById("graph-scroll");
+  const oldScale = state.zoom.scale;
+  const newScale = clampZoom(nextScale);
+  if (Math.abs(newScale - oldScale) < 0.001) {
+    return;
+  }
+
+  const focusX = viewportX ?? scroll.clientWidth / 2;
+  const focusY = viewportY ?? scroll.clientHeight / 2;
+  const oldWidth = Math.max(1, state.zoom.baseWidth * oldScale);
+  const oldHeight = Math.max(1, state.zoom.baseHeight * oldScale);
+  const ratioX = (scroll.scrollLeft + focusX) / oldWidth;
+  const ratioY = (scroll.scrollTop + focusY) / oldHeight;
+
+  state.zoom.scale = newScale;
+  applyZoom();
+
+  const newWidth = Math.max(1, state.zoom.baseWidth * newScale);
+  const newHeight = Math.max(1, state.zoom.baseHeight * newScale);
+  scroll.scrollLeft = ratioX * newWidth - focusX;
+  scroll.scrollTop = ratioY * newHeight - focusY;
+}
+
+function zoomBy(factor, clientX = null, clientY = null) {
+  const scroll = document.getElementById("graph-scroll");
+  let viewportX = null;
+  let viewportY = null;
+  if (clientX !== null && clientY !== null) {
+    const rect = scroll.getBoundingClientRect();
+    viewportX = clientX - rect.left;
+    viewportY = clientY - rect.top;
+  }
+  setZoom(state.zoom.scale * factor, viewportX, viewportY);
+}
+
+function bindGraphInteractions() {
+  const scroll = document.getElementById("graph-scroll");
+  scroll.addEventListener(
+    "wheel",
+    (event) => {
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+      event.preventDefault();
+      const factor = Math.exp(-event.deltaY * 0.0015);
+      zoomBy(factor, event.clientX, event.clientY);
+    },
+    { passive: false },
+  );
+
+  scroll.addEventListener("pointerdown", handlePointerDown);
+  scroll.addEventListener("pointermove", handlePointerMove);
+  scroll.addEventListener("pointerup", handlePointerEnd);
+  scroll.addEventListener("pointercancel", handlePointerEnd);
+}
+
+function handlePointerDown(event) {
+  const scroll = document.getElementById("graph-scroll");
+  scroll.setPointerCapture(event.pointerId);
+  state.pointers.set(event.pointerId, {
+    x: event.clientX,
+    y: event.clientY,
+  });
+  resetGesture();
+}
+
+function handlePointerMove(event) {
+  if (!state.pointers.has(event.pointerId)) {
+    return;
+  }
+
+  state.pointers.set(event.pointerId, {
+    x: event.clientX,
+    y: event.clientY,
+  });
+
+  const scroll = document.getElementById("graph-scroll");
+  if (state.pointers.size === 1) {
+    event.preventDefault();
+    const pointer = state.pointers.values().next().value;
+    if (!state.gesture || state.gesture.type !== "pan") {
+      state.gesture = {
+        type: "pan",
+        x: pointer.x,
+        y: pointer.y,
+        scrollLeft: scroll.scrollLeft,
+        scrollTop: scroll.scrollTop,
+      };
+    }
+    scroll.scrollLeft = state.gesture.scrollLeft - (pointer.x - state.gesture.x);
+    scroll.scrollTop = state.gesture.scrollTop - (pointer.y - state.gesture.y);
+    return;
+  }
+
+  if (state.pointers.size === 2) {
+    event.preventDefault();
+    const [a, b] = Array.from(state.pointers.values());
+    const distance = pointerDistance(a, b);
+    const center = pointerCenter(a, b);
+    if (!state.gesture || state.gesture.type !== "pinch") {
+      state.gesture = {
+        type: "pinch",
+        distance,
+        scale: state.zoom.scale,
+      };
+      return;
+    }
+    const rect = scroll.getBoundingClientRect();
+    setZoom(
+      state.gesture.scale * (distance / state.gesture.distance),
+      center.x - rect.left,
+      center.y - rect.top,
+    );
+  }
+}
+
+function handlePointerEnd(event) {
+  state.pointers.delete(event.pointerId);
+  resetGesture();
+}
+
+function resetGesture() {
+  state.gesture = null;
+}
+
+function pointerDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pointerCenter(a, b) {
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  };
+}
+
+function handleResize() {
+  if (!state.zoom.canvas || !state.zoom.svg) {
+    return;
+  }
+  state.zoom.min = fitScaleForCurrentView({
+    width: state.zoom.baseWidth,
+    height: state.zoom.baseHeight,
+  });
+  if (state.zoom.scale < state.zoom.min) {
+    state.zoom.scale = state.zoom.min;
+    applyZoom();
   }
 }
 
@@ -444,6 +605,8 @@ function bindTabs() {
 
 async function init() {
   bindTabs();
+  bindGraphInteractions();
+  window.addEventListener("resize", handleResize);
   if (window.location.hash === "#second-player") {
     state.activeKey = "second";
   }
